@@ -348,15 +348,32 @@ void MapGraphicsView::handleChildViewContextMenu(QContextMenuEvent *event)
 }
 
 //protected slot
-void MapGraphicsView::handleChildViewScrollWheel(QWheelEvent *event)
+// ---------------------------------------------------------------------------
+// MapGraphicsView::handleChildViewScrollWheel
+//   Обработка колесика мыши (Qt5.14+): используется angleDelta(),
+//   т.к. старый delta() удалён в Qt5.15 при включённом QT_DISABLE_DEPRECATED.
+// ---------------------------------------------------------------------------
+void MapGraphicsView::handleChildViewScrollWheel(QWheelEvent* event)
 {
-    event->setAccepted(true);
+    // angleDelta() возвращает дискретное смещение колесика:
+    //   x – горизонтально, y – вертикально (обычно ±120)
+    const QPoint d = event->angleDelta();
 
-    this->setDragMode(MapGraphicsView::ScrollHandDrag);
-    if (event->delta() > 0)
-        this->zoomIn(MouseZoom);
+    // Проверяем направление вращения (используем y-компоненту)
+    const bool wheelUp = (d.y() > 0);
+
+    if (wheelUp)
+    {
+        // Увеличиваем масштаб
+        this->zoomIn();
+    }
     else
-        this->zoomOut(MouseZoom);
+    {
+        // Уменьшаем масштаб
+        this->zoomOut();
+    }
+
+    event->accept();
 }
 
 //private slot

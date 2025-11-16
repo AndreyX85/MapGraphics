@@ -9,6 +9,7 @@
 #include <QMap>
 #include <QSharedPointer>
 #include <QMutex>
+#include <QRecursiveMutex>
 
 class MAPGRAPHICSSHARED_EXPORT CompositeTileSource : public MapTileSource
 {
@@ -59,7 +60,7 @@ protected:
     virtual void fetchTile(quint32 x,
                            quint32 y,
                            quint8 z);
-    
+
 signals:
     /*!
      \brief Emitted when anything changes about the layers. One is added/deleted, moved, transparency is changed, etc.
@@ -72,7 +73,7 @@ signals:
     void sourceRemoved(int index);
 
     void sourcesReordered();
-    
+
 public slots:
 
 private slots:
@@ -81,14 +82,17 @@ private slots:
 
 private:
     void doChildThreading(QSharedPointer<MapTileSource>);
-    QMutex * _globalMutex;
+
+    // было: QMutex * _globalMutex;
+    mutable QRecursiveMutex _globalMutex; // рекурсивный мьютекс-член
+
     QList<QSharedPointer<MapTileSource> > _childSources;
     QList<qreal> _childOpacities;
     QList<bool> _childEnabledFlags;
 
     //A hash of QString:QMap pointer to quint32:QImage pointer
     QHash<QString, QMap<quint32, QImage *> * > _pendingTiles;
-    
+
 };
 
 #endif // COMPOSITETILESOURCE_H

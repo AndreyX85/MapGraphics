@@ -3,9 +3,13 @@
 # Project created by QtCreator 2012-03-03T10:50:47
 #
 #-------------------------------------------------
+CONFIG += c++17        # включаем C++17, Qt6 его всё равно требует
+CONFIG += warn_on      # хотим максимум предупреждений
 
 QT       += network sql
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x050F00
 
 TARGET = MapGraphics
 TEMPLATE = lib

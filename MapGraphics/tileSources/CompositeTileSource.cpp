@@ -10,13 +10,15 @@
 CompositeTileSource::CompositeTileSource() :
     MapTileSource()
 {
-    _globalMutex = new QMutex(QMutex::Recursive);
+    //'Recursive' is not a member of QMutex
+    // теперь не нужно
+    //_globalMutex = new QMutex(QMutex::Recursive);
     this->setCacheMode(MapTileSource::NoCaching);
 }
 
 CompositeTileSource::~CompositeTileSource()
 {
-    _globalMutex->lock();
+    QMutexLocker locker(&_globalMutex); // защита при разрушении
 
     qDebug() << this << "destructing";
     //Clean up all data related to pending tiles
@@ -39,13 +41,11 @@ CompositeTileSource::~CompositeTileSource()
         if (!thread.isNull() && thread != this->thread())
             thread->wait(10000);
     }
-
-    delete this->_globalMutex;
 }
 
 QPointF CompositeTileSource::ll2qgs(const QPointF &ll, quint8 zoomLevel) const
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (_childSources.isEmpty())
     {
         qWarning() << "Composite tile source is empty --- results undefined";
@@ -58,7 +58,7 @@ QPointF CompositeTileSource::ll2qgs(const QPointF &ll, quint8 zoomLevel) const
 
 QPointF CompositeTileSource::qgs2ll(const QPointF &qgs, quint8 zoomLevel) const
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (_childSources.isEmpty())
     {
         qWarning() << "Composite tile source is empty --- results undefined";
@@ -71,7 +71,7 @@ QPointF CompositeTileSource::qgs2ll(const QPointF &qgs, quint8 zoomLevel) const
 
 quint64 CompositeTileSource::tilesOnZoomLevel(quint8 zoomLevel) const
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (_childSources.isEmpty())
         return 1;
     else
@@ -80,7 +80,7 @@ quint64 CompositeTileSource::tilesOnZoomLevel(quint8 zoomLevel) const
 
 quint16 CompositeTileSource::tileSize() const
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (_childSources.isEmpty())
         return 256;
     else
@@ -89,7 +89,7 @@ quint16 CompositeTileSource::tileSize() const
 
 quint8 CompositeTileSource::minZoomLevel(QPointF ll)
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     //Return the highest minimum
     quint8 highest = 0;
 
@@ -104,7 +104,7 @@ quint8 CompositeTileSource::minZoomLevel(QPointF ll)
 
 quint8 CompositeTileSource::maxZoomLevel(QPointF ll)
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     //Return the lowest maximum
     quint8 lowest = 50;
 
@@ -129,7 +129,7 @@ QString CompositeTileSource::tileFileExtension() const
 
 void CompositeTileSource::addSourceTop(QSharedPointer<MapTileSource> source, qreal opacity)
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (source.isNull())
         return;
 
@@ -152,7 +152,7 @@ void CompositeTileSource::addSourceTop(QSharedPointer<MapTileSource> source, qre
 
 void CompositeTileSource::addSourceBottom(QSharedPointer<MapTileSource> source, qreal opacity)
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (source.isNull())
         return;
 
@@ -178,7 +178,7 @@ void CompositeTileSource::moveSource(int from, int to)
     if (from < 0 || to < 0)
         return;
 
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
 
     int size = this->numSources();
     if (from >= size || to >= size)
@@ -195,7 +195,7 @@ void CompositeTileSource::moveSource(int from, int to)
 
 void CompositeTileSource::removeSource(int index)
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (index < 0 || index >= _childSources.size())
         return;
 
@@ -211,13 +211,13 @@ void CompositeTileSource::removeSource(int index)
 
 int CompositeTileSource::numSources() const
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     return _childSources.size();
 }
 
 QSharedPointer<MapTileSource> CompositeTileSource::getSource(int index) const
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (index < 0 || index >= _childSources.size())
         return QSharedPointer<MapTileSource>();
 
@@ -226,7 +226,7 @@ QSharedPointer<MapTileSource> CompositeTileSource::getSource(int index) const
 
 qreal CompositeTileSource::getOpacity(int index) const
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (index < 0 || index >= _childSources.size())
         return 0.0;
     return _childOpacities[index];
@@ -236,7 +236,7 @@ void CompositeTileSource::setOpacity(int index, qreal opacity)
 {
     opacity = qMin<qreal>(1.0,qMax<qreal>(0.0,opacity));
 
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (index < 0 || index >= _childSources.size())
         return;
 
@@ -252,7 +252,7 @@ void CompositeTileSource::setOpacity(int index, qreal opacity)
 
 bool CompositeTileSource::getEnabledFlag(int index) const
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (index < 0 || index >= _childSources.size())
         return 0.0;
     return _childEnabledFlags[index];
@@ -260,7 +260,7 @@ bool CompositeTileSource::getEnabledFlag(int index) const
 
 void CompositeTileSource::setEnabledFlag(int index, bool isEnabled)
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     if (index < 0 || index >= _childSources.size())
         return;
 
@@ -276,7 +276,7 @@ void CompositeTileSource::setEnabledFlag(int index, bool isEnabled)
 //protected
 void CompositeTileSource::fetchTile(quint32 x, quint32 y, quint8 z)
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     //If we have no child sources, just print a message about that
     if (_childSources.isEmpty())
     {
@@ -319,7 +319,7 @@ void CompositeTileSource::fetchTile(quint32 x, quint32 y, quint8 z)
 //private slot
 void CompositeTileSource::handleTileRetrieved(quint32 x, quint32 y, quint8 z)
 {
-    QMutexLocker lock(_globalMutex);
+    QMutexLocker locker(&_globalMutex);
     QObject * sender = QObject::sender();
     MapTileSource * tileSource = qobject_cast<MapTileSource *>(sender);
 
