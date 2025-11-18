@@ -8,6 +8,8 @@
 #include <QtDebug>
 #include <QNetworkReply>
 
+#include <QRegularExpression>
+
 const qreal PI = 3.14159265358979323846;
 const qreal deg2rad = PI / 180.0;
 const qreal rad2deg = 180.0 / PI;
@@ -181,16 +183,31 @@ void OSMTileSource::handleNetworkRequestFinished()
     QDateTime expireTime;
     if (reply->hasRawHeader("Cache-Control"))
     {
+
         //We support the max-age directive only for now
-        const QByteArray cacheControl = reply->rawHeader("Cache-Control");
-        QRegExp maxAgeFinder("max-age=(\\d+)");
-        if (maxAgeFinder.indexIn(cacheControl) != -1)
+         const QByteArray cacheControl = reply->rawHeader("Cache-Control");
+        // QRegExp maxAgeFinder("max-age=(\\d+)");
+        // if (maxAgeFinder.indexIn(cacheControl) != -1)
+        // {
+        //     bool ok = false;
+        //     const qint64 delta = maxAgeFinder.cap(1).toULongLong(&ok);
+
+        //     if (ok)
+        //         expireTime = QDateTime::currentDateTimeUtc().addSecs(delta);
+        // }
+
+        QRegularExpression maxAgeFinder(QStringLiteral("max-age=(\\d+)"));  // ищем число после max-age=
+        QRegularExpressionMatch match = maxAgeFinder.match(cacheControl);
+
+        if (match.hasMatch())
         {
             bool ok = false;
-            const qint64 delta = maxAgeFinder.cap(1).toULongLong(&ok);
+            const qint64 delta = match.captured(1).toInt(&ok);
 
             if (ok)
+            {
                 expireTime = QDateTime::currentDateTimeUtc().addSecs(delta);
+            }
         }
     }
 

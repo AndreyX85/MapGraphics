@@ -15,6 +15,30 @@
 #include "guts/PrivateQGraphicsView.h"
 #include "guts/Conversions.h"
 
+#include <functional>    // для std::hash
+#include <QPointF>
+
+// Специализация std::hash для QPointF (нужна Qt6 для QSet/QHash)
+// https://forum.qt.io/topic/144283/creating-a-qhash-function-for-qpointf
+namespace std
+{
+    template<> struct hash<QPointF>
+    {
+        // seed по умолчанию нужен, чтобы QHash мог передавать зерно
+        size_t operator()(const QPointF& p, size_t seed = std::hash<int>{}(0)) const noexcept
+        {
+            const size_t hx = std::hash<double>{}(p.x());
+            const size_t hy = std::hash<double>{}(p.y());
+
+            // простое комбинирование двух хешей
+            size_t h = hx ^ (hy + 0x9e3779b97f4a7c15ULL + (hx << 6) + (hx >> 2));
+
+            // смешиваем с seed (как обычно делают для хешей)
+            return h ^ (seed + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2));
+        }
+    };
+}
+
 MapGraphicsView::MapGraphicsView(MapGraphicsScene *scene, QWidget *parent) :
     QWidget(parent)
 {
