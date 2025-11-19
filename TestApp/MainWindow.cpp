@@ -14,6 +14,7 @@
 #include <QtDebug>
 #include <QThread>
 #include <QImage>
+#include <QToolTip>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -21,39 +22,74 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    //Setup the MapGraphics scene and view
-    MapGraphicsScene * scene = new MapGraphicsScene(this);
-    MapGraphicsView * view = new MapGraphicsView(scene,this);
-
-    //The view will be our central widget
+    //Создаём сцену и вид
+    MapGraphicsScene *scene = new MapGraphicsScene(this);
+    MapGraphicsView  *view  = new MapGraphicsView(scene, this);
     this->setCentralWidget(view);
 
-    //Setup some tile sources
-    QSharedPointer<OSMTileSource> osmTiles(new OSMTileSource(OSMTileSource::OSMTiles), &QObject::deleteLater);
-    QSharedPointer<GridTileSource> gridTiles(new GridTileSource(), &QObject::deleteLater);
-    QSharedPointer<CompositeTileSource> composite(new CompositeTileSource(), &QObject::deleteLater);
-    composite->addSourceBottom(osmTiles);
-    composite->addSourceTop(gridTiles);
-    view->setTileSource(composite);
+    // Сохраняем в поле, чтобы дальше было проще работать
+    m_view = view;
 
-    //Create a widget in the dock that lets us configure tile source layers
-    CompositeTileSourceConfigurationWidget * tileConfigWidget = new CompositeTileSourceConfigurationWidget(composite.toWeakRef(),
-                                                                                         this->ui->dockWidget);
+    // Базовые источники тайлов
+    QSharedPointer<OSMTileSource> osmTiles(
+        new OSMTileSource(OSMTileSource::OSMTiles),
+        &QObject::deleteLater);
+
+    QSharedPointer<GridTileSource> gridTiles(
+        new GridTileSource(),
+        &QObject::deleteLater);
+
+    // Настраиваем, где лежат SRTM/DTED файлы
+    QStringList srtmDirs;
+    // ВНИМАНИЕ: здесь нужны реальные пути до каталогов SRTM (.hgt и т.п.)
+    srtmDirs << "C:/SRTM";
+
+    // Создаём слой SRTM
+    m_srtmTiles = QSharedPointer<SrtmGridTileSource>(new SrtmGridTileSource(srtmDirs), &QObject::deleteLater);
+
+    // Собираем CompositeTileSource
+    QSharedPointer<CompositeTileSource> composite(
+        new CompositeTileSource(),
+        &QObject::deleteLater);
+
+    // ВНИМАНИЕ: здесь нужны реальные ключи
+    const QString owmApiKey = QStringLiteral("YOU KEY");
+
+    QSharedPointer<MeteoGridTileSource> meteoTiles(new MeteoGridTileSource(owmApiKey, MeteoGridTileSource::Layer::Temperature), &QObject::deleteLater);
+
+    //уменьшаем/увеличиваем прозрачность, или через инструментарий
+    //meteoTiles->setOpacity(0.7);
+
+    composite->addSourceBottom(osmTiles);     // внизу - OSM
+    composite->addSourceTop(gridTiles);       // поверх - обычная сетка
+    composite->addSourceTop(meteoTiles);      // метео
+    composite->addSourceTop(m_srtmTiles);     // зоны SRTM
+
+    m_view->setTileSource(composite);
+
+    // Док с конфигуратором слоёв
+    CompositeTileSourceConfigurationWidget *tileConfigWidget =
+        new CompositeTileSourceConfigurationWidget(composite.toWeakRef(),
+                                                   this->ui->dockWidget);
     this->ui->dockWidget->setWidget(tileConfigWidget);
     delete this->ui->dockWidgetContents;
 
     this->ui->menuWindow->addAction(this->ui->dockWidget->toggleViewAction());
     this->ui->dockWidget->toggleViewAction()->setText("&Layers");
 
-    view->setZoomLevel(12);
-    view->centerOn(-112.202442, 40.9936234);
+    // Начальный zoom/центр
+    m_view->setZoomLevel(10);
+    // центрируем
+    m_view->centerOn(55.9936234, 37.202442); // (lon, lat)
 
-    // Create a circle on the map to demonstrate MapGraphicsObject a bit
-    // The circle can be clicked/dragged around and should be ~5km in radius
-    MapGraphicsObject * circle = new CircleObject(5000, false, QColor(255, 0, 0, 100));
-    circle->setLatitude(40.9936234);
-    circle->setLongitude(-112.202442);
+    // Пример объекта
+    MapGraphicsObject *circle = new CircleObject(5000, false, QColor(255, 0, 0, 100));
+    circle->setLatitude(55.9936234);
+    circle->setLongitude(37.202442);
     scene->addObject(circle);
+
+    // Подписываемся на клик по карте (сигнал от MapGraphicsView)
+    connect(m_view, &MapGraphicsView::mouseClickedLL, this, &MainWindow::onMapClickedLL);
 }
 
 MainWindow::~MainWindow()
@@ -61,8 +97,37 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-//private slot
+
 void MainWindow::on_actionExit_triggered()
 {
     this->close();
+}
+
+void MainWindow::onMapClickedLL(const QPointF& ll, const QPoint& globalPos)
+{
+    if (m_srtmTiles.isNull())
+        return;
+
+    const double lon = ll.x();
+    const double lat = ll.y();
+
+    double h = 0.0;
+    if (m_srtmTiles->sampleHeight(lat, lon, h))
+    {
+        // Успешно получили высоту - показываем всплывающую подсказку
+        const QString text =
+            QStringLiteral("Широта: %1\nДолгота: %2\nВысота: %3 м")
+                .arg(lat, 0, 'f', 6)
+                .arg(lon, 0, 'f', 6)
+                .arg(h,   0, 'f', 1);
+
+        QToolTip::showText(globalPos, text, this);
+    }
+    else
+    {
+        // можно показывать и "нет данных":
+        // QToolTip::showText(globalPos,
+        //                    QStringLiteral("Нет данных SRTM"),
+        //                    this);
+    }
 }

@@ -28,6 +28,7 @@ SOURCES += MapGraphicsScene.cpp \
     tileSources/GridTileSource.cpp \
     guts/MapTileGraphicsObject.cpp \
     guts/PrivateQGraphicsView.cpp \
+    tileSources/MeteoGridTileSource.cpp \
     tileSources/OSMTileSource.cpp \
     guts/MapGraphicsNetwork.cpp \
     tileSources/CompositeTileSource.cpp \
@@ -38,7 +39,8 @@ SOURCES += MapGraphicsScene.cpp \
     guts/PrivateQGraphicsInfoSource.cpp \
     PolygonObject.cpp \
     Position.cpp \
-    LineObject.cpp
+    LineObject.cpp \
+    tileSources/SrtmGridTileSource.cpp
 
 HEADERS += MapGraphicsScene.h\
         MapGraphics_global.h \
@@ -51,6 +53,7 @@ HEADERS += MapGraphicsScene.h\
     tileSources/GridTileSource.h \
     guts/MapTileGraphicsObject.h \
     guts/PrivateQGraphicsView.h \
+    tileSources/MeteoGridTileSource.h \
     tileSources/OSMTileSource.h \
     guts/MapGraphicsNetwork.h \
     tileSources/CompositeTileSource.h \
@@ -61,7 +64,8 @@ HEADERS += MapGraphicsScene.h\
     guts/PrivateQGraphicsInfoSource.h \
     PolygonObject.h \
     Position.h \
-    LineObject.h
+    LineObject.h \
+    tileSources/SrtmGridTileSource.h
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

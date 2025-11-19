@@ -11,6 +11,7 @@
 #include <QVector3D>
 #include <QStringBuilder>
 #include <QHash>
+#include <QPointF>
 
 #include "MapGraphicsScene.h"
 #include "MapGraphicsObject.h"
@@ -76,6 +77,17 @@ public:
     
 signals:
     void zoomLevelChanged(quint8 nZoom);
+
+    /**
+     * @brief mouseClickedLL
+     * @param ll         географические координаты клика (x=lon, y=lat)
+     * @param globalPos  экранные координаты (для QToolTip)
+     *
+     * Этот сигнал шлётся каждый раз, когда пользователь кликает мышью
+     * по внутреннему QGraphicsView (ребёнку MapGraphicsView).
+     * Можно использовать для запроса высоты, контекстного меню и т.п.
+     */
+    void mouseClickedLL(const QPointF& ll, const QPoint& globalPos);
     
 public slots:
 

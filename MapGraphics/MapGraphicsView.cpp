@@ -16,7 +16,7 @@
 #include "guts/Conversions.h"
 
 #include <functional>    // для std::hash
-#include <QPointF>
+
 
 // Специализация std::hash для QPointF (нужна Qt6 для QSet/QHash)
 // https://forum.qt.io/topic/144283/creating-a-qhash-function-for-qpointf
@@ -356,6 +356,23 @@ void MapGraphicsView::handleChildMouseMove(QMouseEvent *event)
 //protected slot
 void MapGraphicsView::handleChildMousePress(QMouseEvent *event)
 {
+    if (_tileSource.isNull() || _childView.isNull())
+    {
+        event->setAccepted(false);
+        return;
+    }
+
+    // Координата клика в системе координат внутреннего QGraphicsView
+    const QPoint viewPos = event->pos();
+
+    const QPointF ll = this->mapToScene(viewPos);   // x = lon, y = lat
+    const QPoint globalPos = event->globalPosition().toPoint();
+
+    // сигнал наружу
+    emit mouseClickedLL(ll, globalPos);
+
+    // Не помечаю событие как обработанное, чтобы панорамирование
+    // и прочие вещи продолжали работать как раньше.
     event->setAccepted(false);
 }
 
