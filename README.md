@@ -17,3 +17,14 @@ The included test app provides a simple test/example application that shows a ma
 The TestApp also renders a 5km radius red circle to demonstrate that objects can be added on top of the map. The circle can be clicked, dragged, and deleted.
 More complicated object interactions are possible, but not demonstrated in this TestApp.
 See https://github.com/raptorswing/FlightPlanner as an example of an application that provides more complicated interactions with objects on the map.
+
+## Additional experimental layers (devQt6 branch)
+
+The `devQt6` branch also contains several simple example tile sources:
+
+- **MeteoGridTileSource** - a basic experimental weather layer that displays a test grid of “meteorological” data on top of the base map.
+- **SrtmGridTileSource** - a demonstration layer for working with SRTM height/elevation data.
+- **KmlGridTileSource** - a simple example of rendering tiles based on KML data (polygons/lines from KML files).
+
+All of these layers are intended as **minimal examples** for experimenting with weather overlays, SRTM height maps and KML-based data.
+They are not production-ready and their APIs and internal formats may change.

@@ -8,6 +8,7 @@
 
 #include "tileSources/SrtmGridTileSource.h"
 #include "tileSources/MeteoGridTileSource.h"
+#include "tileSources/KmlGridTileSource.h"
 
 class MapGraphicsView;
 
@@ -37,6 +38,9 @@ private:
 
     /// Источник SRTM-данных (индекс плиток + sampleHeight())
     QSharedPointer<SrtmGridTileSource> m_srtmTiles;
+
+    /// Источник данных KML (векторные объекты поверх карты)
+    QSharedPointer<KmlGridTileSource> m_kmlTiles;
 };
 
 #endif // MAINWINDOW_H

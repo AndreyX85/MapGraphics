@@ -22,6 +22,8 @@ FORMS    += MainWindow.ui
 
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x050F00
 
+#LIBS    += -lkmldom -lkmlengine -lkmlbase
+
 #Linkage for MapGraphics shared library
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../MapGraphics/release/ -lMapGraphics
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../MapGraphics/debug/ -lMapGraphics

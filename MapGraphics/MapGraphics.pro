@@ -9,6 +9,11 @@ CONFIG += warn_on      # хотим максимум предупреждени�
 QT       += network sql
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+#pacman -S mingw-w64-x86_64-boost
+#pacman -S mingw-w64-x86_64-libkml
+DEFINES += USE_QTKMLLIB
+LIBS    += -lkmldom -lkmlengine -lkmlbase
+
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x050F00
 
 TARGET = MapGraphics
@@ -40,7 +45,8 @@ SOURCES += MapGraphicsScene.cpp \
     PolygonObject.cpp \
     Position.cpp \
     LineObject.cpp \
-    tileSources/SrtmGridTileSource.cpp
+    tileSources/SrtmGridTileSource.cpp \
+    tileSources/KmlGridTileSource.cpp
 
 HEADERS += MapGraphicsScene.h\
         MapGraphics_global.h \
@@ -65,7 +71,8 @@ HEADERS += MapGraphicsScene.h\
     PolygonObject.h \
     Position.h \
     LineObject.h \
-    tileSources/SrtmGridTileSource.h
+    tileSources/SrtmGridTileSource.h \
+    tileSources/KmlGridTileSource.h
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

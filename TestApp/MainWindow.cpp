@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // Настраиваем, где лежат SRTM/DTED файлы
     QStringList srtmDirs;
     // ВНИМАНИЕ: здесь нужны реальные пути до каталогов SRTM (.hgt и т.п.)
-    srtmDirs << "C:/SRTM";
+    srtmDirs << "YOU PATH";
 
     // Создаём слой SRTM
     m_srtmTiles = QSharedPointer<SrtmGridTileSource>(new SrtmGridTileSource(srtmDirs), &QObject::deleteLater);
@@ -52,7 +52,6 @@ MainWindow::MainWindow(QWidget *parent) :
         new CompositeTileSource(),
         &QObject::deleteLater);
 
-    // ВНИМАНИЕ: здесь нужны реальные ключи
     const QString owmApiKey = QStringLiteral("YOU KEY");
 
     QSharedPointer<MeteoGridTileSource> meteoTiles(new MeteoGridTileSource(owmApiKey, MeteoGridTileSource::Layer::Temperature), &QObject::deleteLater);
@@ -60,10 +59,44 @@ MainWindow::MainWindow(QWidget *parent) :
     //уменьшаем/увеличиваем прозрачность, или через инструментарий
     //meteoTiles->setOpacity(0.7);
 
+
+    // Путь к KML-файлу.
+    // Вариант 1: жёстко прописанный путь (для тестов).
+    QString kmlPath = QStringLiteral("YOU PATH ");
+
+
+    // Вариант 2 (позже): можно читать путь из настроек, или
+    // открыть через QFileDialog, или передавать извне.
+
+    if (QFile::exists(kmlPath))
+    {
+        // Создаём источник KML-данных
+        m_kmlTiles = QSharedPointer<KmlGridTileSource>(new KmlGridTileSource(kmlPath, this),
+            &QObject::deleteLater);
+
+        // Можно чуть настроить оформление (по желанию)
+       // m_kmlTiles->setPointColor(Qt::red);                        // точки
+       // m_kmlTiles->setLineColor(Qt::green);                       // линии
+      //  m_kmlTiles->setPolygonFillColor(QColor(0, 0, 255, 80));    // полигоны
+    }
+    else
+    {
+        qWarning() << "[MainWindow] KML file not found:" << kmlPath;
+        // m_kmlTiles останется пустым (null) — слой просто не будет добавлен
+    }
+
+
     composite->addSourceBottom(osmTiles);     // внизу - OSM
     composite->addSourceTop(gridTiles);       // поверх - обычная сетка
     composite->addSourceTop(meteoTiles);      // метео
     composite->addSourceTop(m_srtmTiles);     // зоны SRTM
+
+    if (!m_kmlTiles.isNull())
+    {
+        // Добавляем KML как верхний слой (чтобы он рисовался поверх всего)
+        composite->addSourceTop(m_kmlTiles);
+    }
+
 
     m_view->setTileSource(composite);
 
